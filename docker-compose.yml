@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:16
+    container_name: challenge-pg
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: challenge_db
+    ports:
+      # Si el 5432 ya está en uso: PG_PORT=5433 docker compose up -d
+      - "${PG_PORT:-5432}:5432"
+    volumes:
+      # Postgres ejecuta los .sql de esta carpeta la primera vez que se crea la base.
+      - ./dump.sql:/docker-entrypoint-initdb.d/01-dump.sql:ro
+    healthcheck:
+      # Por TCP: durante la carga inicial Postgres solo escucha por socket, así que esto
+      # recién da OK cuando el dump terminó de cargarse.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres -d challenge_db"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
